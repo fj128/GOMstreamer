@@ -34,7 +34,7 @@ from optparse import OptionParser
 from string import Template
 
 debug = True
-# debug = False  # Comment this line to print debugging information
+debug = False  # Comment this line to print debugging information
 
 VERSION = "0.7.0"
 
@@ -154,8 +154,7 @@ def main():
 
     # Collecting data on the Live streaming page
     print 'Getting season url...'
-    # gomtvLiveURL = getLivePageURL(gomtvURL)
-    gomtvLiveURL = 'http://www.gomtv.net/event/LimJinRok_Live.gom'
+    gomtvLiveURL = getLivePageURL(gomtvURL)
     print 'Grabbing the \'Live\' page (%s).' % gomtvLiveURL
     request = urllib2.Request(gomtvLiveURL)
     response = urllib2.urlopen(request)
