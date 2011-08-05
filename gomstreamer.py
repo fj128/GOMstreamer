@@ -35,7 +35,7 @@ from string import Template
 from urlparse import urljoin
 
 debug = True
-# debug = False  # Comment this line to print debugging information
+debug = False  # Comment this line to print debugging information
 
 # We only see log messages at the DEBUG level.
 if debug:
