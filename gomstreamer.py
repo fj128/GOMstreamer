@@ -35,7 +35,7 @@ from string import Template
 from urlparse import urljoin
 
 debug = False
-debug = True  # Uncomment this line to print more debugging information
+#debug = True  # Uncomment this line to print more debugging information
 
 # send INFO and above messages to stdout, if debug enabled then also send 
 # everything to 'gomstreamer.log' (because dumps of webpage contents are necessary but distracting)
