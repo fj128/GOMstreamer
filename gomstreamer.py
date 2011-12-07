@@ -35,11 +35,11 @@ from string import Template
 from urlparse import urljoin
 
 debug = False
-#debug = True  # Uncomment this line to print more debugging information
+debug = True  # Uncomment this line to print more debugging information
 
 # send INFO and above messages to stdout, if debug enabled then also send 
 # everything to 'gomstreamer.log' (because dumps of webpage contents are necessary but distracting)
-log.basicConfig(level = log.INFO,
+log.basicConfig(level = log.NOTSET,
                 stream = sys.stdout,
                 format='%(levelname)s %(message)s')
 if debug:
@@ -113,6 +113,10 @@ def main():
             break
         except Exception as exc:
             log.exception('Failed to extract stream url from %r', liveURL)
+    else:
+        log.error('Nothing else to try')
+        return
+
 
 
     # Put variables into VLC command
@@ -336,7 +340,7 @@ def iteratePossibleLivePageURLs(gomtvURL, alternativeStream = None):
         else:
             yield '/main/goLive.gom'
             yield getLivePageURL_gom(gomtvURL)
-        yield getSeasonURL_sjp()
+        yield getLivePageURL_sjp()
     return (url for url in internal_iterator() if url) # must use a generator instead of list comprehension!
 
 def getLivePageURL_sjp():
@@ -394,7 +398,7 @@ def parseGOXFile(contents):
     # Grabbing the gomcmd URL
     try:
         log.info('Parsing for the HTTP stream.')
-        streamPattern = r'<REF href="([^"]*)"/>'
+        streamPattern = r'<REF href="([^"]*)"\s*/>'
         regexResult = re.search(streamPattern, contents).group(1)
     except AttributeError:
         log.error('Unable to find the gomcmd URL in the GOX XML file.')
