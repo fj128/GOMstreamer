@@ -230,7 +230,7 @@ def grabStreams(options):
         if len(urls) > 1:
             if options.streamChoice == 'first':
                 urls = urls[:1]
-            if options.options.streamChoice == 'alternate':
+            if options.streamChoice == 'alternate':
                 urls = urls[1:2] # Assume second is alternate
 
         for i in range(len(urls)):
