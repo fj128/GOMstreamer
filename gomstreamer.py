@@ -46,7 +46,7 @@ else:
     logging.basicConfig(level = logging.WARNING,
                         format='%(levelname)s %(message)s')
 
-VERSION = '0.9.0'
+VERSION = '0.9.1'
 
 def main():
     curlCmd = 'curl -A KPeerClient "$url" -o "$output"'
@@ -140,9 +140,9 @@ def main():
             print 'Playing stream...'
     else:
         if numberOfStreams > 1:
-            print 'Saving streams as ' + outputFiles + ' ...'
+            print 'Saving streams as %s ...' % ', '.join(map(str, outputFiles))
         else:
-            print 'Saving stream as "' + outputFiles[0] + '" ...'
+            print 'Saving stream as "%s" ...' % outputFiles[0]
 
     # Executing command
     procs = []
