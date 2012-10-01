@@ -24,7 +24,6 @@ import datetime
 import logging
 import os
 import re
-import StringIO
 import subprocess
 import sys
 import time
@@ -73,6 +72,8 @@ def main():
     # Seeing if we're running the latest version of GOMstreamer
     checkForUpdate()
 
+    grabStreams(options, 'signIn')
+
     if options.mode == 'scheduled-play':
         # Delaying execution until necessary
         delay(options.kt)
@@ -82,7 +83,7 @@ def main():
 
     # Put variables into VLC command
     vlcCmd = Template(options.vlcCmd).substitute(
-            {'cache': options.cache, 
+            {'cache': options.cache,
              'debug' : ('', '--verbose=2')[debug]})
 
     # Create shell commands
@@ -92,11 +93,11 @@ def main():
 
         webCmd = Template(options.webCmd).substitute(
                 {'url' : url, 'output' : '-'})
-    
+
         # Add verbose output for VLC if we are debugging
         if debug:
             webCmd = webCmd + ' -v'
-    
+
         # When playing, pipe wget/curl into VLC
         # We have already substituted $output with correct target.
         cmds.append(webCmd + ' | ' + vlcCmd)
@@ -142,7 +143,7 @@ def signIn(gomtvSignInURL, options):
     # Now expects to log in only via the website. Thanks chrippa.
     headers = {'Referer': 'http://www.gomtv.net/'}
     request = urllib2.Request(gomtvSignInURL, data, headers)
-    response = urllib2.urlopen(request)
+    urllib2.urlopen(request)
     # The real response that we want are the cookies, so returning None is fine.
     return
 
@@ -170,7 +171,7 @@ def grabPage(url):
     response = urllib2.urlopen(request)
     return response.read()
 
-def grabStreams(options):
+def grabStreams(options, method = 'full'):
     # Setting urllib2 up so that we can store cookies
     cookiejar = cookielib.LWPCookieJar()
     opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookiejar))
@@ -182,6 +183,8 @@ def grabStreams(options):
     if len(cookiejar) == 0:
         logging.error('Authentification failed. Please check your login and password.')
         sys.exit(1)
+    elif method == 'signIn':
+        return
 
     # Collecting data on the Live streaming page
     logging.info('Getting season url...')
@@ -195,7 +198,7 @@ def grabStreams(options):
     while (not validGoxFound):
         urls = parseHTML(response, options.quality)
         logging.debug('Printing URL(s) on Live page: %s' % urls)
-    
+
         if len(urls) > 1:
             if options.streamChoice == 'first':
                 urls = urls[:1]
@@ -209,16 +212,27 @@ def grabStreams(options):
             logging.info('Grabbing the GOX XML file for the %s stream.' % options.quality)
             goxFile = grabPage(url)
 
-            # It's possible to have a second stream available to premium viewers only
-            if (goxFile == '1002' or goxFile == '') and options.quality == 'SQTest' and i > 0:
-                logging.warning('Unable to use the alternate stream without premium membership.')
-                logging.warning('Using only the first stream.')
-                validGoxFound = True
-                break
-
             # The response for the GOX XML if an incorrect stream quality is chosen is 1002.
             if (goxFile == '1002' or goxFile == ''):
-                newQuality = 'SQ' if options.quality == 'HQ' else 'SQTest'
+                # Breaking when we reach SQTest, either switch streams to 'first' or give up
+                if options.quality == 'SQTest':
+                    if i > 0 and validGoxFound:
+                        logging.warning('Unable to use the alternate stream without premium membership.')
+                        logging.warning('Using only the first stream.')
+                        break
+                    elif i == 0 and options.streamChoice == 'both' and len(urls) > 1:
+                        logging.warning('Unable to use the first stream, attempting the alternate stream')
+                        break
+                    else:
+                        logging.error('Unable to use %s quality stream.', options.quality)
+                        logging.error('No %s quality streams available for use.', options.quality)
+                        sys.exit(1)
+                if options.quality == 'HQ':
+                    newQuality = 'SQ'
+                elif options.quality == 'SQ':
+                    newQuality = 'HQTest'
+                else:
+                    newQuality = 'SQTest'
                 logging.warning('Unable to use %s quality stream.', options.quality)
                 logging.warning('Purchase a premium ticket for access to this stream quality.')
                 logging.warning('Trying %s quality instead.', newQuality)
@@ -405,7 +419,7 @@ def getSeasonURL_sjp():
     return latestSeason
 
 def getSeasonURL_gom(gomtvURL):
-    # Getting season url from the 'Go Live!' button on the main page. 
+    # Getting season url from the 'Go Live!' button on the main page.
     request = urllib2.Request(gomtvURL)
     response = urllib2.urlopen(request)
     match = re.search('.*liveicon"><a href="([^"]*)"', response.read())
